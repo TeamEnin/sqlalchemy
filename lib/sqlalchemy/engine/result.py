@@ -213,7 +213,7 @@ class ResultMetaData(object):
     context."""
 
     __slots__ = (
-        '_keymap', 'case_sensitive', 'matched_on_name',
+        '_keymap', '_keymap_dup', 'case_sensitive', 'matched_on_name',
         '_processors', 'keys', '_orig_processors')
 
     def __init__(self, parent, cursor_description):
