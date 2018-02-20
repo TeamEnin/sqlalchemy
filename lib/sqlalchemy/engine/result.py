@@ -187,11 +187,12 @@ except ImportError:
 
 class _DupDict:
 
-    def __init__(self, cols):
+    def __init__(self, cols=None):
         self._data = dict()
         self._idxs = dict()
-        for key, value in cols:
-            self[key] = value
+        if cols:
+            for key, value in cols:
+                self[key] = value
 
     def __getitem__(self, key):
         idx = self._idxs[key]
