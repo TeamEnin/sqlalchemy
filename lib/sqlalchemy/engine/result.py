@@ -237,7 +237,7 @@ class ResultMetaData(object):
             num_ctx_cols, cols_are_ordered, textual_ordered)
 
         self._keymap = {}
-        self._keymap_dup = {}
+        self._keymap_dup = _DupDict()
         if not _baserowproxy_usecext:
             # keymap indexes by integer index: this is only used
             # in the pure Python BaseRowProxy.__getitem__
