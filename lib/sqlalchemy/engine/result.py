@@ -185,6 +185,28 @@ except ImportError:
     pass
 
 
+class _DupDict:
+
+    def __init__(self, cols):
+        self._data = dict()
+        self._idxs = dict()
+        for key, value in cols:
+            self[key] = value
+
+    def __getitem__(self, key):
+        idx = self._idxs[key]
+        entry = self._data[key]
+        output = entry[idx]
+        self._idxs[key] = (idx + 1) % len(entry)
+        return output
+    
+    def __setitem__(self, key, value):
+        if key not in self._data:
+            self._data[key] = list()
+            self._idxs[key] = 0
+        self._data[key].append(value)
+
+
 class ResultMetaData(object):
     """Handle cursor.description, applying additional info from an execution
     context."""
@@ -215,6 +237,7 @@ class ResultMetaData(object):
             num_ctx_cols, cols_are_ordered, textual_ordered)
 
         self._keymap = {}
+        self._keymap_dup = {}
         if not _baserowproxy_usecext:
             # keymap indexes by integer index: this is only used
             # in the pure Python BaseRowProxy.__getitem__
@@ -238,6 +261,11 @@ class ResultMetaData(object):
 
         # keymap by primary string...
         by_key = dict([
+            (elem[2], (elem[3], elem[4], elem[0]))
+            for elem in raw
+        ])
+        
+        self._keymap_dup = _DupDict([
             (elem[2], (elem[3], elem[4], elem[0]))
             for elem in raw
         ])
@@ -518,6 +546,7 @@ class ResultMetaData(object):
 
     def _key_fallback(self, key, raiseerr=True):
         map = self._keymap
+        map_dup = self._keymap_dup
         result = None
         if isinstance(key, util.string_types):
             result = map.get(key if self.case_sensitive else key.lower())
@@ -538,7 +567,7 @@ class ResultMetaData(object):
                     if self.case_sensitive
                     else key.name.lower()) in map:
                 # match is only on name.
-                result = map[key.name
+                result = map_dup[key.name
                              if self.case_sensitive
                              else key.name.lower()]
             # search extra hard to make sure this
@@ -561,6 +590,7 @@ class ResultMetaData(object):
                 return None
         else:
             map[key] = result
+            map_dup[key] = result
         return result
 
     def _has_key(self, key):
